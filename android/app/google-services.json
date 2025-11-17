@@ -1,37 +1,26 @@
 {
   "project_info": {
-    "project_number": "1028321631410",
-    "firebase_url": "https://iotbmtech-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "iotbmtech",
-    "storage_bucket": "iotbmtech.firebasestorage.app"
+    "project_number": "423882799684",
+    "project_id": "iot-healthcare-20f1c",
+    "storage_bucket": "iot-healthcare-20f1c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1028321631410:android:ef8206c98a964b5334bdab",
+        "mobilesdk_app_id": "1:423882799684:android:be25c4851535304b71da11",
         "android_client_info": {
-          "package_name": "com.bmtechlab.iotproject"
+          "package_name": "com.example.iot"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1028321631410-7htes604fljc14e1n8ubn6mjr3lc7dal.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD9MQTvN6_roxOOHzO0-8txOKdLMB42N_Y"
+          "current_key": "AIzaSyCP1ydB-8nfHHFjV1Z4dPGBSL-o0jV37sM"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1028321631410-7htes604fljc14e1n8ubn6mjr3lc7dal.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
