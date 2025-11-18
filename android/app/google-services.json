@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "423882799684",
+    "firebase_url": "https://iot-healthcare-20f1c-default-rtdb.firebaseio.com",
     "project_id": "iot-healthcare-20f1c",
     "storage_bucket": "iot-healthcare-20f1c.firebasestorage.app"
   },

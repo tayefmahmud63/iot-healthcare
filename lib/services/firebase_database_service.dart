@@ -2,7 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class FirebaseDatabaseService {
-  static const String databaseUrl = 'https://iotbmtech-default-rtdb.asia-southeast1.firebasedatabase.app/';
+  static const String databaseUrl = 'https://iot-healthcare-20f1c-default-rtdb.firebaseio.com';
   late DatabaseReference _databaseRef;
   
   FirebaseDatabaseService() {
