@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:iot/theme/iot_theme.dart';
+import 'package:iot/services/firebase_database_service.dart';
 
 class HeartRateChart extends StatefulWidget {
   final String dataSource; // e.g. "heartrate"
@@ -10,6 +12,7 @@ class HeartRateChart extends StatefulWidget {
   final VoidCallback? onRemove;
   final String? heartRateValue; // Current Heart Rate value from Firebase
   final String? heartRateTimestamp; // Timestamp of Heart Rate update
+  final FirebaseDatabaseService? firebaseService;
 
   const HeartRateChart({
     Key? key,
@@ -20,6 +23,7 @@ class HeartRateChart extends StatefulWidget {
     this.onRemove,
     this.heartRateValue,
     this.heartRateTimestamp,
+    this.firebaseService,
   }) : super(key: key);
 
   @override
@@ -30,16 +34,46 @@ class _HeartRateChartState extends State<HeartRateChart> {
   final List<FlSpot> _spots = [];
   final int _maxPoints = 50;
   double? _lastValue;
+  StreamSubscription? _subscription;
 
   @override
-  void didUpdateWidget(HeartRateChart oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void initState() {
+    super.initState();
+    if (widget.firebaseService != null) {
+      _watchSpecificField();
+    } else if (widget.heartRateValue != null) {
+      _addValue(widget.heartRateValue!);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _watchSpecificField() {
+    _subscription?.cancel();
+    _subscription = widget.firebaseService!.watchData('metrics/${widget.dataSource}').listen((event) {
+      if (event.snapshot.exists && mounted) {
+        final data = event.snapshot.value;
+        if (data is Map) {
+          final value = data['value'];
+          if (value != null) {
+            final valueStr = value.toString();
+            if (valueStr != _lastValue?.toString()) {
+              _addValue(valueStr);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  void _addValue(String valueStr) {
+    final value = double.tryParse(valueStr) ?? 0.0;
     
-    if (widget.heartRateValue != null && 
-        widget.heartRateValue != _lastValue?.toString()) {
-      
-      final value = double.tryParse(widget.heartRateValue ?? '0') ?? 0.0;
-      
+    if (value != _lastValue) {
       final xIndex = _spots.length.toDouble();
       
       setState(() {
@@ -54,6 +88,25 @@ class _HeartRateChartState extends State<HeartRateChart> {
         
         _lastValue = value;
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(HeartRateChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Only update if the dataSource changed or if we don't have firebaseService
+    if (widget.dataSource != oldWidget.dataSource) {
+      if (widget.firebaseService != null) {
+        _watchSpecificField();
+      }
+    }
+    
+    // Fallback: if no firebaseService, use prop updates (for backward compatibility)
+    if (widget.firebaseService == null && 
+        widget.heartRateValue != null && 
+        widget.heartRateValue != oldWidget.heartRateValue) {
+      _addValue(widget.heartRateValue!);
     }
   }
 

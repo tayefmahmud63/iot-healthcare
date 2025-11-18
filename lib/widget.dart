@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:iot/gauge_widget.dart';
 import 'package:iot/heart_rate_chart.dart';
+import 'package:iot/button_widgets.dart';
 import 'package:iot/services/firebase_database_service.dart';
 import 'package:iot/theme/iot_theme.dart';
 
-enum MetricVisualType { standard, gauge, chart }
+enum MetricVisualType { standard, gauge, chart, button, pushButton }
 
 class MetricBlock {
   final MetricDefinition definition;
@@ -224,8 +225,9 @@ class MetricDefinition {
 
 List<MetricBlock> metricsFromFirebase(
   Map<String, dynamic>? firebaseData,
-  List<MetricDefinition> definitions,
-) {
+  List<MetricDefinition> definitions, {
+  FirebaseDatabaseService? firebaseService,
+}) {
   return definitions.map((def) {
     final data = firebaseData?[def.firebaseField];
 
@@ -257,8 +259,37 @@ List<MetricBlock> metricsFromFirebase(
             lineColor: def.iconColor,
             heartRateValue: chartValue,
             heartRateTimestamp: timestamp,
+            firebaseService: firebaseService,
           ),
         );
+      case MetricVisualType.button:
+        if (firebaseService != null) {
+          return MetricBlock(
+            definition: def,
+            customWidget: ToggleButtonWidget(
+              title: def.name,
+              firebaseField: def.firebaseField,
+              icon: def.icon,
+              accentColor: def.iconColor,
+              firebaseService: firebaseService,
+            ),
+          );
+        }
+        return MetricBlock(definition: def);
+      case MetricVisualType.pushButton:
+        if (firebaseService != null) {
+          return MetricBlock(
+            definition: def,
+            customWidget: PushButtonWidget(
+              title: def.name,
+              firebaseField: def.firebaseField,
+              icon: def.icon,
+              accentColor: def.iconColor,
+              firebaseService: firebaseService,
+            ),
+          );
+        }
+        return MetricBlock(definition: def);
       case MetricVisualType.standard:
         final value = _extractString(data);
         final unit = _extractUnit(data, def.unit);
@@ -408,7 +439,11 @@ class ReactiveHealthMetricsWidget extends StatelessWidget {
         }
 
         final firebaseData = snapshot.data;
-        final allMetrics = metricsFromFirebase(firebaseData, definitions);
+        final allMetrics = metricsFromFirebase(
+          firebaseData,
+          definitions,
+          firebaseService: firebaseService,
+        );
         final metricsById = {for (var m in allMetrics) m.id: m};
         final filteredMetrics = metricOrder
             .where((id) => metricEnabled[id] ?? true)

@@ -304,6 +304,10 @@ class EditPage extends StatelessWidget {
         return 'Chart';
       case MetricVisualType.standard:
         return 'Card';
+      case MetricVisualType.button:
+        return 'Button';
+      case MetricVisualType.pushButton:
+        return 'Push Button';
     }
   }
 }
@@ -485,7 +489,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<MetricBlock> _buildMetricsForExport(Map<String, dynamic>? firebaseData) {
-    final allMetrics = metricsFromFirebase(firebaseData, _metricDefinitions);
+    final allMetrics = metricsFromFirebase(
+      firebaseData,
+      _metricDefinitions,
+      firebaseService: _firebaseService,
+    );
     final metricsById = {for (final metric in allMetrics) metric.id: metric};
     return _metricOrder
         .where((id) => _metricEnabled[id] ?? true)
@@ -519,8 +527,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await showModalBottomSheet<MetricDefinition>(
       context: context,
       isScrollControlled: true,
-      builder: (context) =>
-          MetricEditorSheet(firebaseService: _firebaseService),
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => MetricEditorSheet(
+        firebaseService: _firebaseService,
+      ),
     );
     if (result == null) return;
 
@@ -553,6 +565,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await showModalBottomSheet<MetricDefinition>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => MetricEditorSheet(
         firebaseService: _firebaseService,
         definition: definition,
@@ -1029,286 +1044,283 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Screenshot(
-      controller: _screenshotController,
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.monitor_heart, color: IoTTheme.primaryBlue, size: 22),
-              const SizedBox(width: 8),
-              const Text(
-                'IoT HealthCare',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          actions: [
-            PopupMenuButton<String>(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 8,
-              offset: const Offset(0, 8),
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: IoTTheme.primaryBlue.withOpacity(0.1),
-                  child: Icon(
-                    Icons.person,
-                    size: 20,
-                    color: IoTTheme.primaryBlue,
-                  ),
-                ),
-              ),
-              onSelected: (value) async {
-                if (value == 'logout') {
-                  final authService = AuthService();
-                  await authService.signOut();
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacementNamed('/');
-                  }
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                final user = FirebaseAuth.instance.currentUser;
-                final email = user?.email ?? 'User';
-                final displayName = email.split('@')[0];
-
-                return [
-                  PopupMenuItem(
-                    value: 'user',
-                    enabled: false,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: IoTTheme.primaryBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.person,
-                                size: 18,
-                                color: IoTTheme.primaryBlue,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      color: IoTTheme.darkBackground,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    email,
-                                    style: TextStyle(
-                                      color: IoTTheme.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(height: 8),
-                  PopupMenuItem(
-                    value: 'logout',
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: IoTTheme.accentPink.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.logout,
-                            size: 16,
-                            color: IoTTheme.accentPink,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Sign Out',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ];
-              },
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.monitor_heart, color: IoTTheme.primaryBlue, size: 22),
+            const SizedBox(width: 8),
+            const Text(
+              'IoT HealthCare',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
         ),
-        body: Container(
-          color: IoTTheme.lightBackground,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _selectedIndex == 0
-                ? ReactiveHealthMetricsWidget(
-                    key: const ValueKey('home'),
-                    metricOrder: _metricOrder,
-                    metricEnabled: _metricEnabled,
-                    firebaseService: _firebaseService,
-                    definitions: _metricDefinitions,
-                  )
-                : _selectedIndex == 1
-                ? Center(
-                    key: const ValueKey('export'),
-                    child: Container(
-                      margin: const EdgeInsets.all(24),
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: IoTTheme.borderColor,
-                          width: 1,
-                        ),
-                        boxShadow: IoTTheme.cardShadow,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+        actions: [
+          PopupMenuButton<String>(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 8,
+            offset: const Offset(0, 8),
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: IoTTheme.primaryBlue.withOpacity(0.1),
+                child: Icon(
+                  Icons.person,
+                  size: 20,
+                  color: IoTTheme.primaryBlue,
+                ),
+              ),
+            ),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final authService = AuthService();
+                await authService.signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacementNamed('/');
+                }
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              final user = FirebaseAuth.instance.currentUser;
+              final email = user?.email ?? 'User';
+              final displayName = email.split('@')[0];
+    
+              return [
+                PopupMenuItem(
+                  value: 'user',
+                  enabled: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: IoTTheme.primaryBlue.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
-                              Icons.picture_as_pdf,
-                              size: 40,
+                              Icons.person,
+                              size: 18,
                               color: IoTTheme.primaryBlue,
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Export Dashboard',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Export all health metrics as PDF',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: IoTTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.picture_as_pdf, size: 20),
-                            label: const Text(
-                              'Export as PDF',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onPressed: _exportHomeScreen,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: IoTTheme.primaryBlue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    color: IoTTheme.darkBackground,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  email,
+                                  style: TextStyle(
+                                    color: IoTTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(height: 8),
+                PopupMenuItem(
+                  value: 'logout',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: IoTTheme.accentPink.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.logout,
+                          size: 16,
+                          color: IoTTheme.accentPink,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Sign Out',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        color: IoTTheme.lightBackground,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _selectedIndex == 0
+              ? ReactiveHealthMetricsWidget(
+                  key: const ValueKey('home'),
+                  metricOrder: _metricOrder,
+                  metricEnabled: _metricEnabled,
+                  firebaseService: _firebaseService,
+                  definitions: _metricDefinitions,
+                )
+              : _selectedIndex == 1
+              ? Center(
+                  key: const ValueKey('export'),
+                  child: Container(
+                    margin: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: IoTTheme.borderColor,
+                        width: 1,
+                      ),
+                      boxShadow: IoTTheme.cardShadow,
                     ),
-                  )
-                : (_settingsReady
-                      ? EditPage(
-                          key: const ValueKey('edit'),
-                          definitions: _metricDefinitions,
-                          metricEnabled: _metricEnabled,
-                          metricOrder: _metricOrder,
-                          onToggleById: _updateMetricEnabled,
-                          onReorder: _updateMetricOrder,
-                          onAddMetric: _handleAddMetric,
-                          onEditMetric: _handleEditMetric,
-                          onDeleteMetric: _handleDeleteMetric,
-                          onReset: _handleResetMetrics,
-                        )
-                      : const Center(child: CircularProgressIndicator())),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: IoTTheme.primaryBlue.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.picture_as_pdf,
+                            size: 40,
+                            color: IoTTheme.primaryBlue,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Export Dashboard',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Export all health metrics as PDF',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: IoTTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.picture_as_pdf, size: 20),
+                          label: const Text(
+                            'Export as PDF',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onPressed: _exportHomeScreen,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: IoTTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : (_settingsReady
+                    ? EditPage(
+                        key: const ValueKey('edit'),
+                        definitions: _metricDefinitions,
+                        metricEnabled: _metricEnabled,
+                        metricOrder: _metricOrder,
+                        onToggleById: _updateMetricEnabled,
+                        onReorder: _updateMetricOrder,
+                        onAddMetric: _handleAddMetric,
+                        onEditMetric: _handleEditMetric,
+                        onDeleteMetric: _handleDeleteMetric,
+                        onReset: _handleResetMetrics,
+                      )
+                    : const Center(child: CircularProgressIndicator())),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: IoTTheme.borderColor, width: 1),
           ),
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: IoTTheme.borderColor, width: 1),
+        child: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              activeIcon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
             ),
-          ),
-          child: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                activeIcon: Icon(Icons.dashboard_rounded),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.upload_file_outlined),
-                activeIcon: Icon(Icons.upload_file),
-                label: 'Export',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.tune),
-                activeIcon: Icon(Icons.tune_rounded),
-                label: 'Settings',
-              ),
-            ],
-            currentIndex: _selectedIndex,
-            selectedItemColor: IoTTheme.primaryBlue,
-            unselectedItemColor: Colors.grey,
-            onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-          ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.upload_file_outlined),
+              activeIcon: Icon(Icons.upload_file),
+              label: 'Export',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.tune),
+              activeIcon: Icon(Icons.tune_rounded),
+              label: 'Settings',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: IoTTheme.primaryBlue,
+          unselectedItemColor: Colors.grey,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
         ),
       ),
     );
