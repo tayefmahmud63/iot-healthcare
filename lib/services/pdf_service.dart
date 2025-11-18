@@ -5,14 +5,13 @@ import 'package:printing/printing.dart';
 import 'package:iot/widget.dart';
 
 class PdfService {
-  static Future<void> generateAndSharePdf(
-    Map<String, dynamic>? firebaseData,
-    String userEmail,
-  ) async {
+  static Future<void> generateAndSharePdf({
+    required List<MetricBlock> metrics,
+    required String userEmail,
+  }) async {
     final pdf = pw.Document();
-    final metrics = metricsFromFirebase(firebaseData);
     final now = DateTime.now();
-    
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -33,15 +32,14 @@ class PdfService {
     );
   }
 
-  static Future<File> generatePdfFile(
-    Map<String, dynamic>? firebaseData,
-    String userEmail,
-    Directory directory,
-  ) async {
+  static Future<File> generatePdfFile({
+    required List<MetricBlock> metrics,
+    required String userEmail,
+    required Directory directory,
+  }) async {
     final pdf = pw.Document();
-    final metrics = metricsFromFirebase(firebaseData);
     final now = DateTime.now();
-    
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -85,10 +83,7 @@ class PdfService {
               children: [
                 pw.Text(
                   'USER ID',
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: PdfColors.grey700,
-                  ),
+                  style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
                 ),
                 pw.SizedBox(height: 2),
                 pw.Text(
@@ -106,10 +101,7 @@ class PdfService {
               children: [
                 pw.Text(
                   'Report Date',
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: PdfColors.grey700,
-                  ),
+                  style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
                 ),
                 pw.SizedBox(height: 2),
                 pw.Text(
@@ -132,7 +124,7 @@ class PdfService {
 
   static pw.Widget _buildMetricsGrid(List<MetricBlock> metrics) {
     final displayMetrics = metrics.where((m) => !m.fullWidth).toList();
-    
+
     return pw.Table(
       border: pw.TableBorder(
         horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
@@ -145,9 +137,7 @@ class PdfService {
       },
       children: [
         pw.TableRow(
-          decoration: const pw.BoxDecoration(
-            color: PdfColors.grey200,
-          ),
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
           children: [
             _buildTableCell('PARAMETER', isHeader: true),
             _buildTableCell('VALUE', isHeader: true),
@@ -202,19 +192,13 @@ class PdfService {
               children: [
                 pw.Text(
                   'Generated: ${_formatDateTime(now)}',
-                  style: pw.TextStyle(
-                    fontSize: 8,
-                    color: PdfColors.grey600,
-                  ),
+                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
                 ),
               ],
             ),
             pw.Text(
               'Page 1 of 1',
-              style: pw.TextStyle(
-                fontSize: 8,
-                color: PdfColors.grey600,
-              ),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
             ),
           ],
         ),
@@ -224,8 +208,18 @@ class PdfService {
 
   static String _formatDate(DateTime dateTime) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
   }
@@ -234,4 +228,3 @@ class PdfService {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
-

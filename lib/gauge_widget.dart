@@ -3,11 +3,26 @@ import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'package:iot/theme/iot_theme.dart';
 
 class GaugeWidget extends StatelessWidget {
-  final double temperature;
+  final double value;
   final bool isRadialGauge;
+  final String title;
+  final String unit;
+  final double minValue;
+  final double maxValue;
+  final Color accentColor;
   final VoidCallback? onRemove;
 
-  GaugeWidget({Key? key, required this.temperature, required this.isRadialGauge, this.onRemove}) : super(key: key);
+  const GaugeWidget({
+    Key? key,
+    required this.value,
+    required this.isRadialGauge,
+    required this.title,
+    required this.unit,
+    this.minValue = 0,
+    this.maxValue = 100,
+    this.accentColor = const Color(0xFF1E88E5),
+    this.onRemove,
+  }) : super(key: key);
 
   Widget _getGauge() {
     if (isRadialGauge) {
@@ -17,10 +32,20 @@ class GaugeWidget extends StatelessWidget {
     }
   }
 
+  double get _clampedValue {
+    if (value < minValue) return minValue;
+    if (value > maxValue) return maxValue;
+    return value;
+  }
+
+  double get _range =>
+      (maxValue - minValue).abs() < 0.0001 ? 1 : (maxValue - minValue);
+  double get _segment => _range / 3;
+
   Widget _getRadialGauge() {
     return SfRadialGauge(
       title: GaugeTitle(
-        text: 'Temperature',
+        text: title,
         textStyle: TextStyle(
           fontSize: 14.0,
           fontWeight: FontWeight.w600,
@@ -29,8 +54,8 @@ class GaugeWidget extends StatelessWidget {
       ),
       axes: <RadialAxis>[
         RadialAxis(
-          minimum: 0,
-          maximum: 100,
+          minimum: minValue,
+          maximum: maxValue,
           startAngle: 180,
           endAngle: 0,
           axisLineStyle: AxisLineStyle(
@@ -40,22 +65,22 @@ class GaugeWidget extends StatelessWidget {
           ),
           ranges: <GaugeRange>[
             GaugeRange(
-              startValue: 0,
-              endValue: 50,
-              color: IoTTheme.primaryBlue,
+              startValue: minValue,
+              endValue: minValue + _segment,
+              color: accentColor.withOpacity(0.4),
               startWidth: 0.15,
               endWidth: 0.15,
             ),
             GaugeRange(
-              startValue: 50,
-              endValue: 75,
+              startValue: minValue + _segment,
+              endValue: minValue + 2 * _segment,
               color: IoTTheme.primaryPurple,
               startWidth: 0.15,
               endWidth: 0.15,
             ),
             GaugeRange(
-              startValue: 75,
-              endValue: 100,
+              startValue: minValue + 2 * _segment,
+              endValue: maxValue,
               color: IoTTheme.accentPink,
               startWidth: 0.15,
               endWidth: 0.15,
@@ -63,25 +88,25 @@ class GaugeWidget extends StatelessWidget {
           ],
           pointers: <GaugePointer>[
             NeedlePointer(
-              value: temperature,
+              value: _clampedValue,
               enableAnimation: true,
               animationType: AnimationType.easeOutBack,
               animationDuration: 1500,
-              needleColor: IoTTheme.primaryBlue,
+              needleColor: accentColor,
               needleStartWidth: 1,
               needleEndWidth: 4,
               knobStyle: KnobStyle(
                 knobRadius: 0.08,
-                color: IoTTheme.primaryBlue,
+                color: accentColor,
                 borderColor: Colors.white,
                 borderWidth: 0.05,
               ),
               tailStyle: TailStyle(
-                color: IoTTheme.primaryBlue.withOpacity(0.5),
+                color: accentColor.withOpacity(0.5),
                 width: 4,
                 length: 0.2,
               ),
-            )
+            ),
           ],
           annotations: <GaugeAnnotation>[
             GaugeAnnotation(
@@ -90,15 +115,15 @@ class GaugeWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      temperature.toStringAsFixed(1),
+                      value.toStringAsFixed(1),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: IoTTheme.primaryBlue,
+                        color: accentColor,
                       ),
                     ),
                     Text(
-                      '°C',
+                      unit,
                       style: TextStyle(
                         fontSize: 12,
                         color: IoTTheme.textSecondary,
@@ -118,30 +143,24 @@ class GaugeWidget extends StatelessWidget {
   }
 
   Widget _getLinearGauge() {
-    return Container(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: SfLinearGauge(
-          minimum: 0.0,
-          maximum: 100.0,
-          orientation: LinearGaugeOrientation.horizontal,
-          majorTickStyle: const LinearTickStyle(length: 20),
-          axisLabelStyle: const TextStyle(fontSize: 12.0, color: Colors.black),
-          axisTrackStyle: LinearAxisTrackStyle(
-            color: Colors.cyan,
-            edgeStyle: LinearEdgeStyle.bothFlat,
-            thickness: 15.0,
-            borderColor: Colors.grey,
-          ),
-          markerPointers: [
-            LinearShapePointer(
-              value: temperature,
-              color: Colors.blue,
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: SfLinearGauge(
+        minimum: minValue,
+        maximum: maxValue,
+        orientation: LinearGaugeOrientation.horizontal,
+        majorTickStyle: const LinearTickStyle(length: 20),
+        axisLabelStyle: const TextStyle(fontSize: 12.0, color: Colors.black),
+        axisTrackStyle: LinearAxisTrackStyle(
+          color: accentColor.withOpacity(0.2),
+          edgeStyle: LinearEdgeStyle.bothFlat,
+          thickness: 15.0,
+          borderColor: accentColor.withOpacity(0.4),
         ),
+        markerPointers: [
+          LinearShapePointer(value: _clampedValue, color: accentColor),
+        ],
       ),
-      margin: const EdgeInsets.all(10),
     );
   }
 
@@ -152,10 +171,7 @@ class GaugeWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: IoTTheme.borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: IoTTheme.borderColor, width: 1),
         boxShadow: IoTTheme.cardShadow,
       ),
       child: Column(
@@ -170,18 +186,14 @@ class GaugeWidget extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: IoTTheme.primaryBlue.withOpacity(0.1),
+                        color: accentColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        Icons.speed,
-                        color: IoTTheme.primaryBlue,
-                        size: 18,
-                      ),
+                      child: Icon(Icons.speed, color: accentColor, size: 18),
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      isRadialGauge ? 'Temperature Gauge' : 'Linear Gauge',
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

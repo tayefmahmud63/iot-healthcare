@@ -13,7 +13,20 @@
           "package_name": "com.example.iot"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "423882799684-hueu188714fvb19qo94go82gpb4jmr5v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.iot",
+            "certificate_hash": "2d7b6e8f05edf8eb54f61fa60f2e8a8ae5d7c785"
+          }
+        },
+        {
+          "client_id": "423882799684-afscpepi24ovpt70hlfd6al0jsbce076.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCP1ydB-8nfHHFjV1Z4dPGBSL-o0jV37sM"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "423882799684-afscpepi24ovpt70hlfd6al0jsbce076.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

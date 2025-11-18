@@ -4,24 +4,26 @@ import 'package:iot/heart_rate_chart.dart';
 import 'package:iot/services/firebase_database_service.dart';
 import 'package:iot/theme/iot_theme.dart';
 
+enum MetricVisualType { standard, gauge, chart }
+
 class MetricBlock {
-  final String name;
-  final IconData icon;
-  final Color iconColor;
+  final MetricDefinition definition;
   final String value;
   final String unit;
-  final bool fullWidth;
   final Widget? customWidget;
 
   MetricBlock({
-    required this.name,
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.unit,
-    this.fullWidth = false,
+    required this.definition,
+    this.value = '',
+    this.unit = '',
     this.customWidget,
   });
+
+  String get id => definition.id;
+  String get name => definition.name;
+  IconData get icon => definition.icon;
+  Color get iconColor => definition.iconColor;
+  bool get fullWidth => definition.fullWidth;
 }
 
 class HealthMetricsPage extends StatelessWidget {
@@ -31,197 +33,274 @@ class HealthMetricsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Health Metrics'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Health Metrics'), elevation: 0),
       body: HealthMetricsWidget(
-        items: metricsFromFirebase(null),
+        items: metricsFromFirebase(null, defaultMetricDefinitions),
       ),
     );
   }
 }
 
-final List<MetricDefinition> metricDefinitions = [
+final List<MetricDefinition> defaultMetricDefinitions = [
   MetricDefinition(
+    id: 'metric_heart_rate',
     name: 'Heart Rate',
+    firebaseField: 'Heart Rate',
     icon: Icons.favorite,
     iconColor: Colors.blue,
     unit: 'BPM',
   ),
   MetricDefinition(
+    id: 'metric_blood_pressure',
     name: 'Blood Pressure',
+    firebaseField: 'Blood Pressure',
     icon: Icons.monitor_heart,
     iconColor: Colors.green,
     unit: 'mmHg',
   ),
   MetricDefinition(
+    id: 'metric_temperature',
     name: 'Temperature',
+    firebaseField: 'Temperature',
     icon: Icons.thermostat,
     iconColor: Colors.orange,
     unit: '°F',
   ),
   MetricDefinition(
+    id: 'metric_oxygen',
     name: 'Oxygen Level',
+    firebaseField: 'Oxygen Level',
     icon: Icons.air,
     iconColor: Colors.cyan,
     unit: '%',
   ),
   MetricDefinition(
+    id: 'metric_steps',
     name: 'Steps',
+    firebaseField: 'Steps',
     icon: Icons.directions_walk,
     iconColor: Colors.purple,
     unit: 'steps',
   ),
   MetricDefinition(
+    id: 'metric_calories',
     name: 'Calories',
+    firebaseField: 'Calories',
     icon: Icons.local_fire_department,
     iconColor: Colors.red,
     unit: 'kcal',
   ),
   MetricDefinition(
+    id: 'metric_gauge',
     name: 'Gauge',
+    firebaseField: 'Gauge',
     icon: Icons.speed,
     iconColor: Colors.teal,
-    unit: '',
+    unit: '°C',
     fullWidth: true,
+    visualType: MetricVisualType.gauge,
   ),
   MetricDefinition(
+    id: 'metric_heart_rate_chart',
     name: 'Heart Rate Chart',
+    firebaseField: 'Heart Rate',
     icon: Icons.show_chart,
     iconColor: Colors.red,
-    unit: '',
+    unit: 'BPM',
     fullWidth: true,
+    visualType: MetricVisualType.chart,
   ),
 ];
 
 class MetricDefinition {
+  final String id;
   final String name;
+  final String firebaseField;
   final IconData icon;
   final Color iconColor;
   final String unit;
+  final MetricVisualType visualType;
   final bool fullWidth;
+  final bool isCustom;
+  final bool isRadialGauge;
+  final double? minValue;
+  final double? maxValue;
+  final bool isUserOverride;
 
-  MetricDefinition({
+  const MetricDefinition({
+    required this.id,
     required this.name,
+    required this.firebaseField,
     required this.icon,
     required this.iconColor,
     required this.unit,
+    this.visualType = MetricVisualType.standard,
     this.fullWidth = false,
+    this.isCustom = false,
+    this.isRadialGauge = true,
+    this.minValue,
+    this.maxValue,
+    this.isUserOverride = false,
   });
-}
 
-List<MetricBlock> metricsFromFirebase(Map<String, dynamic>? firebaseData) {
-  if (firebaseData == null) {
-    return metricDefinitions.map((def) {
-      if (def.fullWidth) {
-        if (def.name == 'Gauge') {
-          return MetricBlock(
-            name: def.name,
-            icon: def.icon,
-            iconColor: def.iconColor,
-            value: '',
-            unit: def.unit,
-            fullWidth: true,
-            customWidget: GaugeWidget(
-              temperature: 72.0,
-              isRadialGauge: true,
-            ),
-          );
-        } else if (def.name == 'Heart Rate Chart') {
-          final heartRateData = firebaseData?['Heart Rate'];
-          final heartRateValue = heartRateData != null && heartRateData is Map
-              ? (heartRateData['value'] ?? '').toString()
-              : null;
-          final heartRateTimestamp = heartRateData != null && heartRateData is Map
-              ? (heartRateData['timestamp'] ?? '').toString()
-              : null;
-          
-          return MetricBlock(
-            name: def.name,
-            icon: def.icon,
-            iconColor: def.iconColor,
-            value: '',
-            unit: def.unit,
-            fullWidth: true,
-            customWidget: HeartRateChart(
-              dataSource: 'heartrate',
-              heartRateValue: heartRateValue,
-              heartRateTimestamp: heartRateTimestamp,
-            ),
-          );
-        }
-      }
-      return MetricBlock(
-        name: def.name,
-        icon: def.icon,
-        iconColor: def.iconColor,
-        value: '0',
-        unit: def.unit,
-      );
-    }).toList();
+  MetricDefinition copyWith({
+    String? id,
+    String? name,
+    String? firebaseField,
+    IconData? icon,
+    Color? iconColor,
+    String? unit,
+    MetricVisualType? visualType,
+    bool? fullWidth,
+    bool? isCustom,
+    bool? isRadialGauge,
+    double? minValue,
+    double? maxValue,
+    bool? isUserOverride,
+  }) {
+    return MetricDefinition(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      firebaseField: firebaseField ?? this.firebaseField,
+      icon: icon ?? this.icon,
+      iconColor: iconColor ?? this.iconColor,
+      unit: unit ?? this.unit,
+      visualType: visualType ?? this.visualType,
+      fullWidth: fullWidth ?? this.fullWidth,
+      isCustom: isCustom ?? this.isCustom,
+      isRadialGauge: isRadialGauge ?? this.isRadialGauge,
+      minValue: minValue ?? this.minValue,
+      maxValue: maxValue ?? this.maxValue,
+      isUserOverride: isUserOverride ?? this.isUserOverride,
+    );
   }
 
-  return metricDefinitions.map((def) {
-    final data = firebaseData[def.name];
-    
-    if (def.fullWidth) {
-      if (def.name == 'Gauge') {
-        final temp = data != null && data is Map
-            ? (data['temperature'] ?? 72.0).toDouble()
-            : 72.0;
-        return MetricBlock(
-          name: def.name,
-          icon: def.icon,
-          iconColor: def.iconColor,
-          value: '',
-          unit: def.unit,
-          fullWidth: true,
-          customWidget: GaugeWidget(
-            temperature: temp,
-            isRadialGauge: true,
-          ),
-        );
-      } else if (def.name == 'Heart Rate Chart') {
-        final heartRateData = firebaseData['Heart Rate'];
-        final heartRateValue = heartRateData != null && heartRateData is Map
-            ? (heartRateData['value'] ?? '').toString()
-            : null;
-        final heartRateTimestamp = heartRateData != null && heartRateData is Map
-            ? (heartRateData['timestamp'] ?? '').toString()
-            : null;
-        
-        return MetricBlock(
-          name: def.name,
-          icon: def.icon,
-          iconColor: def.iconColor,
-          value: '',
-          unit: def.unit,
-          fullWidth: true,
-          customWidget: HeartRateChart(
-            dataSource: 'heartrate',
-            heartRateValue: heartRateValue,
-            heartRateTimestamp: heartRateTimestamp,
-          ),
-        );
-      }
-    }
-    
-    final value = data != null && data is Map
-        ? (data['value'] ?? '0').toString()
-        : '0';
-    final unit = data != null && data is Map
-        ? (data['unit'] ?? def.unit).toString()
-        : def.unit;
-    
-    return MetricBlock(
-      name: def.name,
-      icon: def.icon,
-      iconColor: def.iconColor,
-      value: value,
-      unit: unit,
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'firebaseField': firebaseField,
+      'iconCodePoint': icon.codePoint,
+      'iconFontFamily': icon.fontFamily,
+      'iconFontPackage': icon.fontPackage,
+      'iconColor': iconColor.value,
+      'unit': unit,
+      'visualType': visualType.name,
+      'fullWidth': fullWidth,
+      'isCustom': isCustom,
+      'isRadialGauge': isRadialGauge,
+      'minValue': minValue,
+      'maxValue': maxValue,
+      'isUserOverride': isUserOverride,
+    };
+  }
+
+  factory MetricDefinition.fromJson(Map<String, dynamic> json) {
+    return MetricDefinition(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      firebaseField: json['firebaseField'] as String,
+      icon: IconData(
+        json['iconCodePoint'] as int,
+        fontFamily: json['iconFontFamily'] as String?,
+        fontPackage: json['iconFontPackage'] as String?,
+        matchTextDirection: false,
+      ),
+      iconColor: Color(json['iconColor'] as int),
+      unit: json['unit'] as String,
+      visualType: MetricVisualType.values.firstWhere(
+        (v) => v.name == json['visualType'],
+        orElse: () => MetricVisualType.standard,
+      ),
+      fullWidth: json['fullWidth'] as bool? ?? false,
+      isCustom: json['isCustom'] as bool? ?? true,
+      isRadialGauge: json['isRadialGauge'] as bool? ?? true,
+      minValue: (json['minValue'] as num?)?.toDouble(),
+      maxValue: (json['maxValue'] as num?)?.toDouble(),
+      isUserOverride: json['isUserOverride'] as bool? ?? false,
     );
+  }
+}
+
+List<MetricBlock> metricsFromFirebase(
+  Map<String, dynamic>? firebaseData,
+  List<MetricDefinition> definitions,
+) {
+  return definitions.map((def) {
+    final data = firebaseData?[def.firebaseField];
+
+    switch (def.visualType) {
+      case MetricVisualType.gauge:
+        final double gaugeValue = _extractDouble(data) ?? 0;
+        final String gaugeUnit = _extractUnit(data, def.unit);
+        return MetricBlock(
+          definition: def,
+          customWidget: GaugeWidget(
+            title: def.name,
+            value: gaugeValue,
+            unit: gaugeUnit,
+            minValue: def.minValue ?? 0,
+            maxValue: def.maxValue ?? 100,
+            isRadialGauge: def.isRadialGauge,
+            accentColor: def.iconColor,
+          ),
+        );
+      case MetricVisualType.chart:
+        final String? chartValue = data == null ? null : _extractString(data);
+        final String? timestamp = _extractTimestamp(data);
+        return MetricBlock(
+          definition: def,
+          customWidget: HeartRateChart(
+            dataSource: def.firebaseField,
+            title: def.name,
+            unit: def.unit,
+            lineColor: def.iconColor,
+            heartRateValue: chartValue,
+            heartRateTimestamp: timestamp,
+          ),
+        );
+      case MetricVisualType.standard:
+        final value = _extractString(data);
+        final unit = _extractUnit(data, def.unit);
+        return MetricBlock(definition: def, value: value, unit: unit);
+    }
   }).toList();
+}
+
+double? _extractDouble(dynamic data) {
+  if (data == null) return null;
+  if (data is Map) {
+    if (data['value'] != null) {
+      return double.tryParse(data['value'].toString());
+    }
+    if (data['temperature'] != null) {
+      return double.tryParse(data['temperature'].toString());
+    }
+  }
+  if (data is num) return data.toDouble();
+  return double.tryParse(data.toString());
+}
+
+String _extractString(dynamic data, {String fallback = '0'}) {
+  if (data == null) return fallback;
+  if (data is Map) {
+    if (data['value'] != null) return data['value'].toString();
+  }
+  return data.toString();
+}
+
+String _extractUnit(dynamic data, String fallback) {
+  if (data is Map && data['unit'] != null) {
+    return data['unit'].toString();
+  }
+  return fallback;
+}
+
+String? _extractTimestamp(dynamic data) {
+  if (data is Map && data['timestamp'] != null) {
+    return data['timestamp'].toString();
+  }
+  return null;
 }
 
 class HealthMetricsWidget extends StatelessWidget {
@@ -233,9 +312,7 @@ class HealthMetricsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
-      child: Column(
-        children: _buildRows(),
-      ),
+      child: Column(children: _buildRows()),
     );
   }
 
@@ -295,12 +372,14 @@ class ReactiveHealthMetricsWidget extends StatelessWidget {
   final List<String> metricOrder;
   final Map<String, bool> metricEnabled;
   final FirebaseDatabaseService firebaseService;
+  final List<MetricDefinition> definitions;
 
   const ReactiveHealthMetricsWidget({
     Key? key,
     required this.metricOrder,
     required this.metricEnabled,
     required this.firebaseService,
+    required this.definitions,
   }) : super(key: key);
 
   @override
@@ -309,9 +388,7 @@ class ReactiveHealthMetricsWidget extends StatelessWidget {
       stream: firebaseService.watchMetricsData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -331,17 +408,11 @@ class ReactiveHealthMetricsWidget extends StatelessWidget {
         }
 
         final firebaseData = snapshot.data;
-        final allMetrics = metricsFromFirebase(firebaseData);
-        
+        final allMetrics = metricsFromFirebase(firebaseData, definitions);
+        final metricsById = {for (var m in allMetrics) m.id: m};
         final filteredMetrics = metricOrder
-            .where((name) => metricEnabled[name] ?? true)
-            .map((name) {
-              try {
-                return allMetrics.firstWhere((m) => m.name == name);
-              } catch (_) {
-                return null;
-              }
-            })
+            .where((id) => metricEnabled[id] ?? true)
+            .map((id) => metricsById[id])
             .where((m) => m != null)
             .cast<MetricBlock>()
             .toList();
@@ -352,8 +423,6 @@ class ReactiveHealthMetricsWidget extends StatelessWidget {
   }
 }
 
-
-
 class MetricCard extends StatefulWidget {
   final MetricBlock metric;
 
@@ -363,7 +432,8 @@ class MetricCard extends StatefulWidget {
   State<MetricCard> createState() => _MetricCardState();
 }
 
-class _MetricCardState extends State<MetricCard> with SingleTickerProviderStateMixin {
+class _MetricCardState extends State<MetricCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -398,10 +468,7 @@ class _MetricCardState extends State<MetricCard> with SingleTickerProviderStateM
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: IoTTheme.borderColor,
-              width: 1,
-            ),
+            border: Border.all(color: IoTTheme.borderColor, width: 1),
             boxShadow: IoTTheme.cardShadow,
           ),
           child: Column(

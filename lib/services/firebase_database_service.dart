@@ -2,9 +2,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class FirebaseDatabaseService {
-  static const String databaseUrl = 'https://iot-healthcare-20f1c-default-rtdb.firebaseio.com';
+  static const String databaseUrl =
+      'https://iot-healthcare-20f1c-default-rtdb.firebaseio.com';
   late DatabaseReference _databaseRef;
-  
+
   FirebaseDatabaseService() {
     _databaseRef = FirebaseDatabase.instanceFor(
       app: Firebase.app(),
@@ -80,7 +81,10 @@ class FirebaseDatabaseService {
     return await readData('metrics');
   }
 
-  Future<bool> updateMetric(String metricName, Map<String, dynamic> metricData) async {
+  Future<bool> updateMetric(
+    String metricName,
+    Map<String, dynamic> metricData,
+  ) async {
     return await updateData('metrics/$metricName', metricData);
   }
 
@@ -131,7 +135,8 @@ class FirebaseDatabaseService {
           'timestamp': DateTime.now().toIso8601String(),
         },
         'Gauge': {
-          'temperature': 72.0,
+          'value': 72,
+          'unit': '°C',
           'timestamp': DateTime.now().toIso8601String(),
         },
       };
@@ -139,4 +144,3 @@ class FirebaseDatabaseService {
     }
   }
 }
-
